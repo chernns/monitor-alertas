@@ -1,0 +1,72 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Severity {
+  INFO
+  WARNING
+  CRITICAL
+}
+
+enum DeliveryStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  createdAt    DateTime @default(now())
+  devices      Device[]
+}
+
+model Device {
+  id        String          @id @default(cuid())
+  name      String
+  ntfyTopic String          @unique
+  userId    String
+  user      User            @relation(fields: [userId], references: [id])
+  events    BusinessEvent[]
+
+  @@index([userId])
+}
+
+model BusinessEvent {
+  id            String            @id @default(cuid())
+  externalId    String            @unique
+  type          String
+  severity      Severity
+  payload       Json
+  deviceId      String
+  device        Device            @relation(fields: [deviceId], references: [id])
+  publishedAt   DateTime
+  createdAt     DateTime          @default(now())
+  notifications NotificationLog[]
+
+  @@index([createdAt])
+  @@index([severity, createdAt])
+  @@index([deviceId])
+}
+
+model NotificationLog {
+  id         String         @id @default(cuid())
+  eventId    String
+  event      BusinessEvent  @relation(fields: [eventId], references: [id])
+  status     DeliveryStatus @default(PENDING)
+  attempts   Int            @default(0)
+  httpStatus Int?
+  error      String?
+  sentAt     DateTime?
+  createdAt  DateTime       @default(now())
+
+  @@index([status, createdAt])
+  @@index([eventId])
+}
