@@ -5,7 +5,7 @@ Aplicação web full-stack de monitoramento e alertas em tempo real. Os eventos 
 **Trabalho Final de Programação Multiplataforma**
 **Integrantes:** Arthur Gomes e Felipe Souza
 **Professor:** Dr. Alexandre Galvani
-**Repositório:** `COLE_AQUI_O_LINK_DO_GITHUB`
+**Repositório:** https://github.com/chernns/monitor-alertas
 
 ---
 
@@ -72,6 +72,7 @@ projeto/
 │   ├── src/
 │   │   ├── config/env.ts        # variáveis de ambiente validadas com Zod
 │   │   ├── broker/              # conexão, publisher e consumidor idempotente
+│   │   ├── http/fetchRetry.ts   # cliente HTTP com timeout e retry exponencial
 │   │   ├── ntfy/dispatcher.ts   # envio de push e registro do status
 │   │   ├── ws/gateway.ts        # gateway WebSocket (JWT + heartbeat)
 │   │   ├── routes/              # auth, events, metrics
@@ -213,6 +214,8 @@ Para receber os alertas:
 3. Publique um evento `CRITICAL` para esse dispositivo (veja [Como testar](#como-testar)).
 
 O dispatcher envia o push com cabeçalhos de controle do ntfy: `Title` (título), `Priority: 5` (urgente), `Tags` (emojis de alerta) e `Click` (URL aberta ao tocar na notificação).
+
+As chamadas ao ntfy têm timeout de 5 s e retry exponencial (até 4 tentativas, com intervalos de cerca de 0,5 s, 1 s e 2 s) em caso de erro de rede, timeout, status 5xx ou 429. O número de tentativas e o resultado ficam gravados em `NotificationLog`.
 
 > Os tópicos do ntfy.sh são públicos: qualquer pessoa que souber o nome consegue ler as mensagens. Por isso o sufixo do tópico é configurável em `backend/prisma/seed.ts`.
 
